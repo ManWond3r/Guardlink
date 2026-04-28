@@ -45,6 +45,7 @@
             <th>Guard</th>
             <th>Shift</th>
             <th>Current Site</th>
+            <th>Client</th>
             <th>Assign To</th>
           </tr>
         </thead>
@@ -84,10 +85,16 @@
           });
 
           const tr = document.createElement("tr");
+
+          // Find client name for this guard's site
+          const guardSite = sites.find(s => s.id === guard.site_id);
+          const clientName = guardSite ? guardSite.client_name : "—";
+
           tr.innerHTML = `
             <td>${guard.full_name}</td>
             <td style="text-transform:capitalize">${guard.shift}</td>
             <td>${guard.site_name || "—"}</td>
+            <td>${guard.site_id ? clientName : "—"}</td>
             <td>
               <select onchange="assignGuard('${guard.id}', this.value)"
                 style="background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:8px 12px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;min-width:200px;">

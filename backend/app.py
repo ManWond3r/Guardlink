@@ -21,6 +21,8 @@ from routes.incidents import incidents_bp
 from routes.invoices import invoices_bp
 from routes.complaints import complaints_bp
 
+
+
 def create_app():
     # Create the Flask application
     app = Flask(__name__)
@@ -82,5 +84,6 @@ def create_admin():
 
 # This runs the server when you execute: python app.py
 if __name__ == "__main__":
-    app = create_app()
-    app.run(debug=True, port=5000)
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host="0.0.0.0", port=port)

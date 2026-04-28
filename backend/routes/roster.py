@@ -42,10 +42,13 @@ def get_roster():
     # Also return all sites so the frontend can show them in the dropdown
     sites_list = []
     for site in sites:
+        from models import Client
+        client = Client.query.get(site.client_id)
         sites_list.append({
             "id": site.id,
             "name": site.name,
-            "location": site.location
+            "location": site.location,
+            "client_name": client.name if client else None
         })
 
     return jsonify({
