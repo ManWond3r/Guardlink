@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuardLink - Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #F0F7F2;
+      --panel: #ffffff;
+      --border: #c8e0d0;
+      --text: #1B2E24;
+      --sub: #6B8F71;
+      --muted: #6B8F71;
+      --nav-bg: #ffffff;
+      --card-hover: #e6f2ea;
+      --gold: #D4A017;
+      --green: #2D6A4F;
+      --green-light: #52B788;
+      --success-bg: #e8f5ee;
+      --success-text: #2E8B57;
+      --error-bg: #fdf0f0;
+      --error-text: #C0392B;
+      --input-bg: #F0F7F2;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0D1B2A;
+      --panel: #1B2E24;
+      --border: #2D6A4F;
+      --text: #ffffff;
+      --sub: #52B788;
+      --muted: #52B788;
+      --nav-bg: #1B2E24;
+      --card-hover: #243d2e;
+      --gold: #D4A017;
+      --green: #52B788;
+      --green-light: #74c69d;
+      --success-bg: #0d2e1a;
+      --success-text: #4caf7d;
+      --error-bg: #2e1a1a;
+      --error-text: #e57373;
+      --input-bg: #0D1B2A;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      transition: all 0.3s;
+    }
+
+    .navbar {
+      background: var(--nav-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .nav-brand span { color: var(--gold); }
+
+    .nav-tag {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-left: 1px solid var(--border);
+      padding-left: 12px;
+      margin-left: 12px;
+    }
+
+    .nav-left { display: flex; align-items: center; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .nav-user { font-size: 13px; color: var(--muted); }
+    .nav-user span { color: var(--green); font-weight: 500; }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 7px 16px;
+      font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover { border-color: var(--green); color: var(--green); }
+
+    .toggle-switch {
+      position: relative;
+      width: 56px;
+      height: 28px;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .toggle-track {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--border);
+      border-radius: 28px;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-track {
+      background: var(--green);
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--panel);
+      transition: transform 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .toggle-switch input:checked + .toggle-track + .toggle-thumb {
+      transform: translateX(28px);
+    }
+
+    .content {
+      padding: 48px 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .page-greeting {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 8px;
+    }
+
+    .page-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.1;
+    }
+
+    .page-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .divider {
+      width: 48px;
+      height: 2px;
+      background: var(--green);
+      margin: 20px 0 32px;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 20px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--green);
+    }
+
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 40px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-card.danger .stat-value { color: var(--error-text); }
+    .stat-card.danger::after { background: var(--error-text); }
+    .stat-card.warning .stat-value { color: var(--gold); }
+    .stat-card.warning::after { background: var(--gold); }
+
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .module-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .module-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--green);
+      transform: scaleY(0);
+      transition: transform 0.2s;
+      transform-origin: bottom;
+    }
+
+    .module-card:hover {
+      background: var(--card-hover);
+      border-color: var(--green);
+      transform: translateY(-2px);
+    }
+
+    .module-card:hover::before { transform: scaleY(1); }
+    .module-icon { font-size: 24px; margin-bottom: 12px; }
+
+    .module-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .module-desc { font-size: 12px; color: var(--muted); }
+
+    .module-arrow {
+      position: absolute;
+      top: 20px; right: 20px;
+      color: var(--border);
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .module-card:hover .module-arrow {
+      color: var(--green);
+      transform: translate(2px, -2px);
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <div class="nav-brand">Guard<span>Link</span></div>
+      <div class="nav-tag">Admin Portal</div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">Signed in as <span id="adminName">Admin</span></div>
+      <label class="toggle-switch" title="Toggle theme">
+        <input type="checkbox" id="themeCheckbox" onchange="toggleTheme()" />
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb" id="toggleIcon">☀️</div>
+      </label>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="page-greeting">Good day</div>
+    <div class="page-title">Operations<br/>Dashboard</div>
+    <div class="page-sub">Manage your security operations from one place</div>
+    <div class="divider"></div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Guards</div>
+        <div class="stat-value" id="statGuards">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Clients</div>
+        <div class="stat-value" id="statClients">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Sites</div>
+        <div class="stat-value" id="statSites">—</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-label">Unpaid Invoices</div>
+        <div class="stat-value" id="statUnpaid">—</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-label">Open Complaints</div>
+        <div class="stat-value" id="statComplaints">—</div>
+      </div>
+    </div>
+
+    <div class="section-label">Modules</div>
+    <div class="modules-grid">
+      <div class="module-card" onclick="go('guards.html')">
+        <div class="module-icon">🛡️</div>
+        <div class="module-title">Guards</div>
+        <div class="module-desc">Manage security personnel</div>
+        <div class="module-arrow">↗</div>
+      </div>
+      <div class="module-card" onclick="go('clients.html')">
+        <div class="module-icon">🏢</div>
+        <div class="module-title">Clients</div>
+        <div class="module-desc">Manage client accounts</div>
+        <div class="module-arrow">↗</div>
+      </div>
+      <div class="module-card" onclick="go('sites.html')">
+        <div class="module-icon">📍</div>
+        <div class="module-title">Sites</div>
+        <div class="module-desc">Manage security sites</div>
+        <div class="module-arrow">↗</div>
+      </div>
+      <div class="module-card" onclick="go('roster.html')">
+        <div class="module-icon">📋</div>
+        <div class="module-title">Duty Roster</div>
+        <div class="module-desc">Assign guards to sites</div>
+        <div class="module-arrow">↗</div>
+      </div>
+      <div class="module-card" onclick="go('attendance.html')">
+        <div class="module-icon">✅</div>
+        <div class="module-title">Attendance</div>
+        <div class="module-desc">Track daily attendance</div>
+        <div class="module-arrow">↗</div>
+      </div>
+      <div class="module-card" onclick="go('incidents.html')">
+        <div class="module-icon">⚠️</div>
+        <div class="module-title">Incidents</div>
+        <div class="module-desc">Log and view incidents</div>
+        <div class="module-arrow">↗</div>
+      </div>
+      <div class="module-card" onclick="go('invoices.html')">
+        <div class="module-icon">💰</div>
+        <div class="module-title">Invoices</div>
+        <div class="module-desc">Generate and track invoices</div>
+        <div class="module-arrow">↗</div>
+      </div>
+      <div class="module-card" onclick="go('complaints.html')">
+        <div class="module-icon">📩</div>
+        <div class="module-title">Complaints</div>
+        <div class="module-desc">View client complaints</div>
+        <div class="module-arrow">↗</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = "http://127.0.0.1:5000";
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    if (!token || role !== "admin") window.location.href = "../login.html";
+
+    // Apply saved theme immediately before page renders
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+
+    // Set admin name
+    const fullName = localStorage.getItem("full_name");
+    if (fullName) document.getElementById("adminName").textContent = fullName;
+
+    // Update the toggle switch to match current theme
+    function updateToggle(theme) {
+      const checkbox = document.getElementById("themeCheckbox");
+      const icon = document.getElementById("toggleIcon");
+      if (checkbox) checkbox.checked = theme === "dark";
+      if (icon) icon.textContent = theme === "dark" ? "🌙" : "☀️";
+    }
+
+    // Toggle between dark and light
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("theme", next);
+      updateToggle(next);
+    }
+
+    function go(page) { window.location.href = page; }
+
+    function logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("full_name");
+      window.location.href = "../login.html";
+    }
+
+    async function apiFetch(endpoint) {
+      return fetch(`${API}${endpoint}`, {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+    }
+
+    async function loadStats() {
+      try {
+        const [guardsRes, clientsRes, sitesRes, invoicesRes, complaintsRes] = await Promise.all([
+          apiFetch("/api/guards"),
+          apiFetch("/api/clients"),
+          apiFetch("/api/sites"),
+          apiFetch("/api/invoices"),
+          apiFetch("/api/complaints")
+        ]);
+
+        const guards = await guardsRes.json();
+        const clients = await clientsRes.json();
+        const sites = await sitesRes.json();
+        const invoices = await invoicesRes.json();
+        const complaints = await complaintsRes.json();
+
+        document.getElementById("statGuards").textContent = guards.length;
+        document.getElementById("statClients").textContent = clients.length;
+        document.getElementById("statSites").textContent = sites.length;
+        document.getElementById("statUnpaid").textContent = invoices.filter(i => i.status === "unpaid").length;
+        document.getElementById("statComplaints").textContent = complaints.filter(c => c.status === "open").length;
+
+      } catch (err) {
+        console.error("Failed to load stats:", err);
+      }
+    }
+
+    // Run on page load
+    updateToggle(savedTheme);
+    loadStats();
+  </script>
+</body>
+</html>

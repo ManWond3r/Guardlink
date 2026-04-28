@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuardLink - Duty Roster</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <div class="nav-brand" onclick="window.location.href='dashboard.html'">Guard<span>Link</span></div>
+      <div class="nav-tag">Admin Portal</div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">Signed in as <span id="adminName">Admin</span></div>
+      <label class="toggle-switch" title="Toggle theme">
+        <input type="checkbox" id="themeCheckbox" onchange="toggleTheme()" />
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb" id="toggleIcon">☀️</div>
+      </label>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Duty Roster</div>
+        <div class="gold-divider"></div>
+      </div>
+      <div class="header-actions">
+        <span class="success-msg" id="successMsg"></span>
+        <button class="btn-secondary" onclick="window.location.href='dashboard.html'">← Back</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="empty-state" id="emptyState">Loading roster...</div>
+      <table class="data-table" id="rosterTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Guard</th>
+            <th>Shift</th>
+            <th>Current Site</th>
+            <th>Assign To</th>
+          </tr>
+        </thead>
+        <tbody id="rosterBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="layout.js"></script>
+  <script>
+    let sites = [];
+
+    async function loadRoster() {
+      try {
+        const res = await apiFetch("/api/roster");
+        const data = await res.json();
+
+        sites = data.sites;
+        const guards = data.guards;
+
+        const tbody = document.getElementById("rosterBody");
+        const empty = document.getElementById("emptyState");
+        const table = document.getElementById("rosterTable");
+
+        if (guards.length === 0) { empty.textContent = "No guards found. Add guards first."; return; }
+
+        empty.style.display = "none";
+        table.style.display = "table";
+        tbody.innerHTML = "";
+
+        guards.forEach(guard => {
+          // Build the dropdown options for sites
+          let options = `<option value="">Unassigned</option>`;
+          sites.forEach(site => {
+            const selected = guard.site_id === site.id ? "selected" : "";
+            options += `<option value="${site.id}" ${selected}>${site.name} — ${site.location}</option>`;
+          });
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${guard.full_name}</td>
+            <td style="text-transform:capitalize">${guard.shift}</td>
+            <td>${guard.site_name || "—"}</td>
+            <td>
+              <select onchange="assignGuard('${guard.id}', this.value)"
+                style="background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:8px 12px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;min-width:200px;">
+                ${options}
+              </select>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        document.getElementById("emptyState").textContent = "Error loading roster.";
+      }
+    }
+
+    async function assignGuard(guardId, siteId) {
+      const msg = document.getElementById("successMsg");
+      msg.textContent = "Saving...";
+
+      try {
+        const res = await apiFetch(`/api/roster/${guardId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ site_id: siteId })
+        });
+
+        if (res.ok) {
+          msg.textContent = "Assignment updated ✓";
+          setTimeout(() => msg.textContent = "", 2000);
+          loadRoster();
+        } else {
+          msg.textContent = "Failed to update.";
+          msg.style.color = "var(--error-text)";
+        }
+      } catch (err) {
+        msg.textContent = "Connection error.";
+      }
+    }
+
+    loadRoster();
+  </script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuardLink - Invoices</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <div class="nav-brand" onclick="window.location.href='dashboard.html'">Guard<span>Link</span></div>
+      <div class="nav-tag">Admin Portal</div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">Signed in as <span id="adminName">Admin</span></div>
+      <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Invoices</div>
+        <div class="gold-divider"></div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-secondary" onclick="window.location.href='dashboard.html'">← Back</button>
+        <button class="btn-primary" id="toggleBtn" onclick="toggleForm()">+ New Invoice</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
+      <input type="text" id="searchInput" placeholder="Search by client name..."
+        oninput="filterInvoices()"
+        style="flex:1;min-width:200px;max-width:300px;background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:10px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;" />
+      <select id="statusFilter" onchange="filterInvoices()"
+        style="background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:10px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;">
+        <option value="">All Statuses</option>
+        <option value="unpaid">Unpaid</option>
+        <option value="paid">Paid</option>
+      </select>
+    </div>
+
+    <div class="form-card" id="invoiceForm" style="display:none">
+      <div class="form-card-title">New Invoice</div>
+      <div class="error-box" id="formError"></div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Client *</label>
+          <select id="clientId"><option value="">Select a client</option></select>
+        </div>
+        <div class="form-field">
+          <label>Month *</label>
+          <input type="month" id="month" />
+        </div>
+        <div class="form-field">
+          <label>Amount (KES) *</label>
+          <input type="number" id="amount" placeholder="e.g. 25000" />
+        </div>
+        <div class="form-field">
+          <label>Status</label>
+          <select id="status">
+            <option value="unpaid">Unpaid</option>
+            <option value="paid">Paid</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveInvoice()" id="saveBtn">Save Invoice</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="empty-state" id="emptyState">Loading invoices...</div>
+      <table class="data-table" id="invoicesTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Month</th>
+            <th>Amount (KES)</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="invoicesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="layout.js"></script>
+  <script>
+    let formVisible = false;
+    let allInvoices = [];
+
+    function toggleForm() {
+      formVisible = !formVisible;
+      document.getElementById("invoiceForm").style.display = formVisible ? "block" : "none";
+      document.getElementById("toggleBtn").textContent = formVisible ? "Cancel" : "+ New Invoice";
+    }
+
+    function formatMonth(monthStr) {
+      if (!monthStr) return "—";
+      try {
+        return new Date(monthStr + "-01").toLocaleDateString("en-KE", { month: "long", year: "numeric" });
+      } catch { return monthStr; }
+    }
+
+    async function loadData() {
+      try {
+        const [invoicesRes, clientsRes] = await Promise.all([
+          apiFetch("/api/invoices"),
+          apiFetch("/api/clients")
+        ]);
+
+        allInvoices = await invoicesRes.json();
+        const clients = await clientsRes.json();
+
+        const select = document.getElementById("clientId");
+        select.innerHTML = '<option value="">Select a client</option>';
+        clients.forEach(client => {
+          const o = document.createElement("option");
+          o.value = client.id;
+          o.textContent = client.name;
+          select.appendChild(o);
+        });
+
+        renderInvoices(allInvoices);
+      } catch (err) {
+        document.getElementById("emptyState").textContent = "Error loading invoices.";
+      }
+    }
+
+    function filterInvoices() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const status = document.getElementById("statusFilter").value;
+      const filtered = allInvoices.filter(i => {
+        const matchesName = (i.client_name || "").toLowerCase().includes(query);
+        const matchesStatus = status === "" || i.status === status;
+        return matchesName && matchesStatus;
+      });
+      renderInvoices(filtered);
+    }
+
+    function renderInvoices(invoices) {
+      const tbody = document.getElementById("invoicesBody");
+      const empty = document.getElementById("emptyState");
+      const table = document.getElementById("invoicesTable");
+
+      if (invoices.length === 0) {
+        empty.textContent = "No invoices found.";
+        empty.style.display = "block";
+        table.style.display = "none";
+        return;
+      }
+
+      empty.style.display = "none";
+      table.style.display = "table";
+      tbody.innerHTML = "";
+
+      invoices.forEach(invoice => {
+        const badgeClass = invoice.status === "paid" ? "badge-paid" : "badge-unpaid";
+        const actionText = invoice.status === "paid" ? "Mark Unpaid" : "Mark Paid";
+        const newStatus = invoice.status === "paid" ? "unpaid" : "paid";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${invoice.client_name || "—"}</td>
+          <td>${formatMonth(invoice.month)}</td>
+          <td>KES ${Number(invoice.amount).toLocaleString()}</td>
+          <td><span class="${badgeClass}">${invoice.status}</span></td>
+          <td>
+            <button class="btn-action" onclick="toggleStatus('${invoice.id}', '${newStatus}')">${actionText}</button>
+            <span style="color:var(--border);margin:0 4px;">|</span>
+            <button class="btn-action" style="color:var(--error-text)" onclick="deleteInvoice('${invoice.id}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function saveInvoice() {
+      const btn = document.getElementById("saveBtn");
+      const errorBox = document.getElementById("formError");
+      errorBox.style.display = "none";
+
+      const client_id = document.getElementById("clientId").value;
+      const month = document.getElementById("month").value;
+      const amount = document.getElementById("amount").value;
+      const status = document.getElementById("status").value;
+
+      if (!client_id || !month || !amount) {
+        errorBox.textContent = "All fields are required.";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+
+      try {
+        const res = await apiFetch("/api/invoices", {
+          method: "POST",
+          body: JSON.stringify({ client_id, month, amount: parseFloat(amount), status })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorBox.textContent = data.error || "Failed to save invoice.";
+          errorBox.style.display = "block";
+          return;
+        }
+
+        document.getElementById("clientId").value = "";
+        document.getElementById("month").value = "";
+        document.getElementById("amount").value = "";
+        document.getElementById("status").value = "unpaid";
+        toggleForm();
+        loadData();
+      } catch (err) {
+        errorBox.textContent = "Could not connect to server.";
+        errorBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Save Invoice";
+      }
+    }
+
+    async function toggleStatus(invoiceId, newStatus) {
+      try {
+        const res = await apiFetch(`/api/invoices/${invoiceId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: newStatus })
+        });
+        if (res.ok) loadData();
+      } catch (err) {
+        alert("Failed to update invoice status.");
+      }
+    }
+
+    async function deleteInvoice(id) {
+      if (!confirm("Are you sure you want to delete this invoice?")) return;
+      try {
+        const res = await apiFetch(`/api/invoices/${id}`, { method: "DELETE" });
+        if (res.ok) loadData();
+        else alert("Failed to delete invoice.");
+      } catch (err) {
+        alert("Could not connect to server.");
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

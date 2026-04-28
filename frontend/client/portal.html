@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuardLink - Client Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #F0F7F2;
+      --panel: #ffffff;
+      --border: #c8e0d0;
+      --text: #1B2E24;
+      --sub: #6B8F71;
+      --muted: #6B8F71;
+      --nav-bg: #ffffff;
+      --card-hover: #e6f2ea;
+      --gold: #D4A017;
+      --green: #2D6A4F;
+      --success-bg: #e8f5ee;
+      --success-text: #2E8B57;
+      --error-bg: #fdf0f0;
+      --error-text: #C0392B;
+      --error-border: #C0392B;
+      --warning-bg: #fdf8e8;
+      --warning-text: #9a7d0a;
+      --input-bg: #F0F7F2;
+      --placeholder: #a0bfa8;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0D1B2A;
+      --panel: #1B2E24;
+      --border: #2D6A4F;
+      --text: #ffffff;
+      --sub: #52B788;
+      --muted: #52B788;
+      --nav-bg: #1B2E24;
+      --card-hover: #243d2e;
+      --gold: #D4A017;
+      --green: #52B788;
+      --success-bg: #0d2e1a;
+      --success-text: #4caf7d;
+      --error-bg: #2e1a1a;
+      --error-text: #e57373;
+      --error-border: #e57373;
+      --warning-bg: #2e2a0d;
+      --warning-text: #f0c040;
+      --input-bg: #0D1B2A;
+      --placeholder: #3a6b50;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .navbar {
+      background: var(--nav-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .nav-brand span { color: var(--gold); }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-user { font-size: 13px; color: var(--muted); }
+    .nav-user span { color: var(--green); font-weight: 500; }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 7px 16px;
+      font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover { border-color: var(--green); color: var(--green); }
+
+    /* Toggle switch */
+    .toggle-switch {
+      position: relative;
+      width: 56px;
+      height: 28px;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .toggle-track {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--border);
+      border-radius: 28px;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-track {
+      background: var(--green);
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--panel);
+      transition: transform 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .toggle-switch input:checked + .toggle-track + .toggle-thumb {
+      transform: translateX(28px);
+    }
+
+    .content {
+      padding: 40px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .gold-divider {
+      width: 40px;
+      height: 2px;
+      background: var(--green);
+      margin-bottom: 24px;
+    }
+
+    .table-wrap {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 48px;
+    }
+
+    .data-table {
+      width: 100%;
+      font-size: 13px;
+      border-collapse: collapse;
+    }
+
+    .data-table thead {
+      background: var(--card-hover);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 14px 20px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .data-table td {
+      padding: 14px 20px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--card-hover); }
+
+    .empty-state {
+      padding: 48px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .complaint-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 28px;
+      margin-bottom: 48px;
+    }
+
+    .complaint-card textarea {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.2s;
+      margin-bottom: 16px;
+    }
+
+    .complaint-card textarea:focus { border-color: var(--green); }
+    .complaint-card textarea::placeholder { color: var(--placeholder); }
+
+    .btn-primary {
+      background: var(--green);
+      color: #ffffff;
+      border: none;
+      padding: 10px 24px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: opacity 0.2s;
+    }
+
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .success-msg {
+      background: var(--success-bg);
+      border: 1px solid var(--success-text);
+      color: var(--success-text);
+      padding: 10px 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .badge-paid { background: var(--success-bg); color: var(--success-text); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .badge-unpaid { background: var(--error-bg); color: var(--error-text); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .badge-open { background: var(--warning-bg); color: var(--warning-text); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .badge-resolved { background: var(--success-bg); color: var(--success-text); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-brand">Guard<span>Link</span></div>
+    <div class="nav-right">
+      <div class="nav-user">Welcome, <span id="clientName">Client</span></div>
+      <label class="toggle-switch" title="Toggle theme">
+        <input type="checkbox" id="themeCheckbox" onchange="toggleTheme()" />
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb" id="toggleIcon">☀️</div>
+      </label>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="content">
+
+   <div class="content">
+
+    <!-- My Site & Guard on Duty -->
+    <div class="section-title">My Site</div>
+    <div class="gold-divider"></div>
+    <div id="siteSection" style="margin-bottom:48px;">
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:24px;" id="siteCards">
+        <div style="color:var(--muted);font-size:14px;text-align:center;padding:24px;">Loading site info...</div>
+      </div>
+    </div>
+
+    <div class="section-title">My Invoices</div>
+
+    <div class="gold-divider"></div>
+    <div class="table-wrap">
+      <div class="empty-state" id="invoicesEmpty">Loading invoices...</div>
+      <table class="data-table" id="invoicesTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Amount (KES)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="invoicesBody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-title">Submit a Complaint</div>
+    <div class="gold-divider"></div>
+    <div class="complaint-card">
+      <div class="success-msg" id="successMsg">Complaint submitted successfully.</div>
+      <textarea id="complaintText" rows="4" placeholder="Describe your complaint..."></textarea>
+      <button class="btn-primary" onclick="submitComplaint()" id="submitBtn">Submit Complaint</button>
+    </div>
+
+    <div class="section-title">My Complaints</div>
+    <div class="gold-divider"></div>
+    <div class="table-wrap">
+      <div class="empty-state" id="complaintsEmpty">Loading complaints...</div>
+      <table class="data-table" id="complaintsTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Message</th>
+            <th>Status</th>
+            <th>Reply</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="complaintsBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    const API = "http://127.0.0.1:5000";
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    if (!token || role !== "client") window.location.href = "../login.html";
+
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+
+    function updateToggle(theme) {
+      const checkbox = document.getElementById("themeCheckbox");
+      const icon = document.getElementById("toggleIcon");
+      if (checkbox) checkbox.checked = theme === "dark";
+      if (icon) icon.textContent = theme === "dark" ? "🌙" : "☀️";
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("theme", next);
+      updateToggle(next);
+    }
+
+    function logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("full_name");
+      window.location.href = "../login.html";
+    }
+
+    async function apiFetch(endpoint, options = {}) {
+      return fetch(`${API}${endpoint}`, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          ...options.headers
+        }
+      });
+    }
+
+    function formatMonth(monthStr) {
+      if (!monthStr) return "—";
+      try {
+        return new Date(monthStr + "-01").toLocaleDateString("en-KE", { month: "long", year: "numeric" });
+      } catch { return monthStr; }
+    }
+
+    async function loadMySite() {
+        try {
+            const res = await apiFetch("/api/sites/my-site");
+            const sites = await res.json();
+            const container = document.getElementById("siteCards");
+
+            if (!sites.length) {
+            container.innerHTML = '<div style="color:var(--muted);font-size:14px;text-align:center;padding:24px;">No sites assigned yet.</div>';
+            return;
+            }
+
+            container.innerHTML = "";
+            sites.forEach(site => {
+            const guardsHtml = site.guards.length === 0
+                ? '<div style="color:var(--muted);font-size:13px;">No guards assigned to this site.</div>'
+                : site.guards.map(g => `
+                    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+                    <div style="width:36px;height:36px;background:var(--success-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🛡️</div>
+                    <div>
+                        <div style="font-size:13px;font-weight:500;color:var(--text);">${g.full_name}</div>
+                        <div style="font-size:11px;color:var(--muted);text-transform:capitalize;letter-spacing:1px;">${g.shift} shift</div>
+                    </div>
+                    ${g.phone ? `<div style="margin-left:auto;font-size:12px;color:var(--muted);">${g.phone}</div>` : ''}
+                    </div>
+                `).join("");
+
+            const card = document.createElement("div");
+            card.style.cssText = "margin-bottom:16px;";
+            card.innerHTML = `
+                <div style="margin-bottom:16px;">
+                <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--text);">${site.name}</div>
+                <div style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-top:4px;">📍 ${site.location}</div>
+                </div>
+                <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Guards on Duty</div>
+                ${guardsHtml}
+            `;
+            container.appendChild(card);
+            });
+        } catch (err) {
+            document.getElementById("siteCards").innerHTML = '<div style="color:var(--muted);font-size:14px;text-align:center;padding:24px;">Could not load site info.</div>';
+        }
+    }
+
+    async function loadInvoices() {
+      try {
+        const res = await apiFetch("/api/invoices");
+        const invoices = await res.json();
+
+        const fullName = localStorage.getItem("full_name");
+        if (fullName) document.getElementById("clientName").textContent = fullName;
+
+        const tbody = document.getElementById("invoicesBody");
+        const empty = document.getElementById("invoicesEmpty");
+        const table = document.getElementById("invoicesTable");
+
+        if (invoices.length === 0) { empty.textContent = "No invoices yet."; return; }
+
+        empty.style.display = "none";
+        table.style.display = "table";
+        tbody.innerHTML = "";
+
+        invoices.forEach(invoice => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${formatMonth(invoice.month)}</td>
+            <td>KES ${Number(invoice.amount).toLocaleString()}</td>
+            <td><span class="${invoice.status === 'paid' ? 'badge-paid' : 'badge-unpaid'}">${invoice.status}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        document.getElementById("invoicesEmpty").textContent = "Error loading invoices.";
+      }
+    }
+
+    async function loadComplaints() {
+      try {
+        const res = await apiFetch("/api/complaints");
+        const complaints = await res.json();
+
+        const tbody = document.getElementById("complaintsBody");
+        const empty = document.getElementById("complaintsEmpty");
+        const table = document.getElementById("complaintsTable");
+
+        if (complaints.length === 0) { empty.textContent = "No complaints submitted yet."; return; }
+
+        empty.style.display = "none";
+        table.style.display = "table";
+        tbody.innerHTML = "";
+
+       complaints.forEach(complaint => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${complaint.message}</td>
+            <td><span class="${complaint.status === 'resolved' ? 'badge-resolved' : 'badge-open'}">${complaint.status}</span></td>
+            <td>${complaint.reply ? `<span style="color:var(--success-text);font-size:12px;">💬 ${complaint.reply}</span>` : '<span style="color:var(--muted);font-size:12px;">No reply yet</span>'}</td>
+            <td>${new Date(complaint.created_at).toLocaleDateString()}</td>
+        `;
+        tbody.appendChild(tr);
+       });
+      } catch (err) {
+        document.getElementById("complaintsEmpty").textContent = "Error loading complaints.";
+      }
+    }
+
+    async function submitComplaint() {
+      const btn = document.getElementById("submitBtn");
+      const msg = document.getElementById("successMsg");
+      const text = document.getElementById("complaintText").value.trim();
+
+      if (!text) return;
+
+      btn.disabled = true;
+      btn.textContent = "Submitting...";
+      msg.style.display = "none";
+
+      try {
+        const res = await apiFetch("/api/complaints", {
+          method: "POST",
+          body: JSON.stringify({ message: text })
+        });
+
+        if (res.ok) {
+          document.getElementById("complaintText").value = "";
+          msg.style.display = "block";
+          setTimeout(() => msg.style.display = "none", 3000);
+          loadComplaints();
+        }
+      } catch (err) {
+        alert("Failed to submit complaint.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Submit Complaint";
+      }
+    }
+
+    updateToggle(savedTheme);
+    loadMySite();
+    loadInvoices();
+    loadComplaints();
+  </script>
+</body>
+</html>

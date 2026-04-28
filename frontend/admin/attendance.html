@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuardLink - Attendance</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <div class="nav-brand" onclick="window.location.href='dashboard.html'">Guard<span>Link</span></div>
+      <div class="nav-tag">Admin Portal</div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">Signed in as <span id="adminName">Admin</span></div>
+     <label class="toggle-switch" title="Toggle theme">
+        <input type="checkbox" id="themeCheckbox" onchange="toggleTheme()" />
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb" id="toggleIcon">☀️</div>
+     </label>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Attendance</div>
+        <div class="gold-divider"></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px;letter-spacing:1px;" id="todayDate"></div>
+      </div>
+      <div class="header-actions">
+        <span class="success-msg" id="successMsg"></span>
+        <button class="btn-secondary" onclick="window.location.href='dashboard.html'">← Back</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="empty-state" id="emptyState">Loading attendance...</div>
+      <table class="data-table" id="attendanceTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Guard</th>
+            <th>Shift</th>
+            <th>Site</th>
+            <th>Status</th>
+            <th>Mark</th>
+          </tr>
+        </thead>
+        <tbody id="attendanceBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="layout.js"></script>
+  <script>
+    // Show today's date
+    const today = new Date().toISOString().split("T")[0];
+    document.getElementById("todayDate").textContent = "Date: " + today;
+
+    async function loadAttendance() {
+      try {
+        const res = await apiFetch("/api/attendance");
+        const records = await res.json();
+
+        const tbody = document.getElementById("attendanceBody");
+        const empty = document.getElementById("emptyState");
+        const table = document.getElementById("attendanceTable");
+
+        if (records.length === 0) { empty.textContent = "No guards found. Add guards first."; return; }
+
+        empty.style.display = "none";
+        table.style.display = "table";
+        tbody.innerHTML = "";
+
+        records.forEach(record => {
+          // Decide what badge to show based on attendance status
+          let statusBadge = `<span style="color:var(--muted);font-size:12px;">Not marked</span>`;
+          if (record.arrived === true) statusBadge = `<span class="badge-present">Present</span>`;
+          if (record.arrived === false) statusBadge = `<span class="badge-absent">Absent</span>`;
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${record.full_name}</td>
+            <td style="text-transform:capitalize">${record.shift}</td>
+            <td>${record.site_name || "—"}</td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="btn-present" onclick="markAttendance('${record.guard_id}', true)">Present</button>
+              <button class="btn-absent" onclick="markAttendance('${record.guard_id}', false)">Absent</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        document.getElementById("emptyState").textContent = "Error loading attendance.";
+      }
+    }
+
+    async function markAttendance(guardId, arrived) {
+      const msg = document.getElementById("successMsg");
+      msg.textContent = "Saving...";
+
+      try {
+        const res = await apiFetch("/api/attendance", {
+          method: "POST",
+          body: JSON.stringify({ guard_id: guardId, arrived: arrived })
+        });
+
+        if (res.ok) {
+          msg.textContent = "Attendance updated ✓";
+          setTimeout(() => msg.textContent = "", 2000);
+          loadAttendance();
+        } else {
+          msg.textContent = "Failed to update.";
+        }
+      } catch (err) {
+        msg.textContent = "Connection error.";
+      }
+    }
+
+    loadAttendance();
+  </script>
+</body>
+</html>

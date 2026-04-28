@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuardLink - Sites</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <div class="nav-brand" onclick="window.location.href='dashboard.html'">Guard<span>Link</span></div>
+      <div class="nav-tag">Admin Portal</div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">Signed in as <span id="adminName">Admin</span></div>
+      <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Sites</div>
+        <div class="gold-divider"></div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-secondary" onclick="window.location.href='dashboard.html'">← Back</button>
+        <button class="btn-primary" id="toggleBtn" onclick="toggleForm()">+ Add Site</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <input type="text" id="searchInput" placeholder="Search by name or location..."
+        oninput="filterSites()"
+        style="width:100%;max-width:400px;background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:10px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;" />
+    </div>
+
+    <div class="form-card" id="siteForm" style="display:none">
+      <div class="form-card-title" id="formTitle">New Site</div>
+      <div class="error-box" id="formError"></div>
+      <input type="hidden" id="editingId" />
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Site Name *</label>
+          <input type="text" id="siteName" placeholder="e.g. Westgate Mall" />
+        </div>
+        <div class="form-field">
+          <label>Location *</label>
+          <input type="text" id="location" placeholder="e.g. Westlands, Nairobi" />
+        </div>
+        <div class="form-field">
+          <label>Client *</label>
+          <select id="clientId">
+            <option value="">Select a client</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveSite()" id="saveBtn">Save Site</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="empty-state" id="emptyState">Loading sites...</div>
+      <table class="data-table" id="sitesTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Site Name</th>
+            <th>Location</th>
+            <th>Client</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="sitesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="layout.js"></script>
+  <script>
+    let formVisible = false;
+    let allSites = [];
+    let clients = [];
+
+    function toggleForm(editMode = false) {
+      if (!editMode) {
+        document.getElementById("formTitle").textContent = "New Site";
+        document.getElementById("siteName").value = "";
+        document.getElementById("location").value = "";
+        document.getElementById("clientId").value = "";
+        document.getElementById("editingId").value = "";
+        document.getElementById("saveBtn").textContent = "Save Site";
+      }
+      formVisible = !formVisible;
+      document.getElementById("siteForm").style.display = formVisible ? "block" : "none";
+      document.getElementById("toggleBtn").textContent = formVisible ? "Cancel" : "+ Add Site";
+    }
+
+    function editSite(site) {
+      document.getElementById("formTitle").textContent = "Edit Site";
+      document.getElementById("siteName").value = site.name;
+      document.getElementById("location").value = site.location;
+      document.getElementById("clientId").value = site.client_id;
+      document.getElementById("editingId").value = site.id;
+      document.getElementById("saveBtn").textContent = "Update Site";
+      document.getElementById("siteForm").style.display = "block";
+      formVisible = true;
+      document.getElementById("toggleBtn").textContent = "Cancel";
+      window.scrollTo(0, 0);
+    }
+
+    async function loadData() {
+      try {
+        const [sitesRes, clientsRes] = await Promise.all([
+          apiFetch("/api/sites"),
+          apiFetch("/api/clients")
+        ]);
+
+        allSites = await sitesRes.json();
+        clients = await clientsRes.json();
+
+        const select = document.getElementById("clientId");
+        select.innerHTML = '<option value="">Select a client</option>';
+        clients.forEach(client => {
+          const option = document.createElement("option");
+          option.value = client.id;
+          option.textContent = client.name;
+          select.appendChild(option);
+        });
+
+        renderSites(allSites);
+      } catch (err) {
+        document.getElementById("emptyState").textContent = "Error loading sites.";
+      }
+    }
+
+    function filterSites() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allSites.filter(s =>
+        s.name.toLowerCase().includes(query) ||
+        s.location.toLowerCase().includes(query)
+      );
+      renderSites(filtered);
+    }
+
+    function renderSites(sites) {
+      const tbody = document.getElementById("sitesBody");
+      const empty = document.getElementById("emptyState");
+      const table = document.getElementById("sitesTable");
+
+      if (sites.length === 0) {
+        empty.textContent = "No sites found.";
+        empty.style.display = "block";
+        table.style.display = "none";
+        return;
+      }
+
+      empty.style.display = "none";
+      table.style.display = "table";
+      tbody.innerHTML = "";
+
+      sites.forEach(site => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${site.name}</td>
+          <td>${site.location}</td>
+          <td>${site.client_name || "—"}</td>
+          <td>
+            <button class="btn-action" onclick='editSite(${JSON.stringify(site)})'>Edit</button>
+            <span style="color:var(--border);margin:0 4px;">|</span>
+            <button class="btn-action" style="color:var(--error-text)" onclick="deleteSite('${site.id}', '${site.name}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function saveSite() {
+      const btn = document.getElementById("saveBtn");
+      const errorBox = document.getElementById("formError");
+      errorBox.style.display = "none";
+
+      const name = document.getElementById("siteName").value.trim();
+      const location = document.getElementById("location").value.trim();
+      const client_id = document.getElementById("clientId").value;
+      const editingId = document.getElementById("editingId").value;
+
+      if (!name || !location || !client_id) {
+        errorBox.textContent = "All fields are required.";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+
+      try {
+        let res;
+        if (editingId) {
+          res = await apiFetch(`/api/sites/${editingId}/edit`, {
+            method: "PUT",
+            body: JSON.stringify({ name, location, client_id })
+          });
+        } else {
+          res = await apiFetch("/api/sites", {
+            method: "POST",
+            body: JSON.stringify({ name, location, client_id })
+          });
+        }
+
+        const data = await res.json();
+        if (!res.ok) {
+          errorBox.textContent = data.error || "Failed to save site.";
+          errorBox.style.display = "block";
+          return;
+        }
+
+        toggleForm();
+        loadData();
+      } catch (err) {
+        errorBox.textContent = "Could not connect to server.";
+        errorBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = editingId ? "Update Site" : "Save Site";
+      }
+    }
+
+    async function deleteSite(id, name) {
+      if (!confirm(`Are you sure you want to delete ${name}?`)) return;
+      try {
+        const res = await apiFetch(`/api/sites/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          loadData();
+        } else {
+          const data = await res.json();
+          alert(data.error || "Failed to delete site.");
+        }
+      } catch (err) {
+        alert("Could not connect to server.");
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuardLink - Clients</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <div class="nav-brand" onclick="window.location.href='dashboard.html'">Guard<span>Link</span></div>
+      <div class="nav-tag">Admin Portal</div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">Signed in as <span id="adminName">Admin</span></div>
+      <label class="toggle-switch" title="Toggle theme">
+        <input type="checkbox" id="themeCheckbox" onchange="toggleTheme()" />
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb" id="toggleIcon">☀️</div>
+       </label>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Clients</div>
+        <div class="gold-divider"></div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-secondary" onclick="window.location.href='dashboard.html'">← Back</button>
+        <button class="btn-primary" id="toggleBtn" onclick="toggleForm()">+ Add Client</button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div style="margin-bottom:16px;">
+      <input type="text" id="searchInput" placeholder="Search by name or email..."
+        oninput="filterClients()"
+        style="width:100%;max-width:400px;background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:10px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;" />
+    </div>
+
+    <div class="form-card" id="clientForm" style="display:none">
+      <div class="form-card-title" id="formTitle">New Client</div>
+      <div class="error-box" id="formError"></div>
+      <input type="hidden" id="editingId" />
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Name *</label>
+          <input type="text" id="name" placeholder="Company or person name" />
+        </div>
+        <div class="form-field">
+          <label>Email *</label>
+          <input type="email" id="email" placeholder="client@example.com" />
+        </div>
+        <div class="form-field">
+          <label>Phone</label>
+          <input type="text" id="phone" placeholder="0712345678" />
+        </div>
+        <div class="form-field">
+          <label>Address</label>
+          <input type="text" id="address" placeholder="Nairobi, Kenya" />
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveClient()" id="saveBtn">Save Client</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="empty-state" id="emptyState">Loading clients...</div>
+      <table class="data-table" id="clientsTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Address</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="clientsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="layout.js"></script>
+  <script>
+    let formVisible = false;
+    let allClients = [];
+
+    function toggleForm(editMode = false) {
+      if (!editMode) {
+        document.getElementById("formTitle").textContent = "New Client";
+        document.getElementById("name").value = "";
+        document.getElementById("email").value = "";
+        document.getElementById("phone").value = "";
+        document.getElementById("address").value = "";
+        document.getElementById("editingId").value = "";
+        document.getElementById("saveBtn").textContent = "Save Client";
+      }
+      formVisible = !formVisible;
+      document.getElementById("clientForm").style.display = formVisible ? "block" : "none";
+      document.getElementById("toggleBtn").textContent = formVisible ? "Cancel" : "+ Add Client";
+    }
+
+    function editClient(client) {
+      document.getElementById("formTitle").textContent = "Edit Client";
+      document.getElementById("name").value = client.name;
+      document.getElementById("email").value = client.email;
+      document.getElementById("phone").value = client.phone || "";
+      document.getElementById("address").value = client.address || "";
+      document.getElementById("editingId").value = client.id;
+      document.getElementById("saveBtn").textContent = "Update Client";
+      document.getElementById("clientForm").style.display = "block";
+      formVisible = true;
+      document.getElementById("toggleBtn").textContent = "Cancel";
+      window.scrollTo(0, 0);
+    }
+
+    async function loadClients() {
+      try {
+        const res = await apiFetch("/api/clients");
+        allClients = await res.json();
+        renderClients(allClients);
+      } catch (err) {
+        document.getElementById("emptyState").textContent = "Error loading clients.";
+      }
+    }
+
+    function filterClients() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allClients.filter(c =>
+        c.name.toLowerCase().includes(query) ||
+        c.email.toLowerCase().includes(query)
+      );
+      renderClients(filtered);
+    }
+
+    function renderClients(clients) {
+      const tbody = document.getElementById("clientsBody");
+      const empty = document.getElementById("emptyState");
+      const table = document.getElementById("clientsTable");
+
+      if (clients.length === 0) {
+        empty.textContent = "No clients found.";
+        empty.style.display = "block";
+        table.style.display = "none";
+        return;
+      }
+
+      empty.style.display = "none";
+      table.style.display = "table";
+      tbody.innerHTML = "";
+
+      clients.forEach(client => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${client.name}</td>
+          <td>${client.email}</td>
+          <td>${client.phone || "—"}</td>
+          <td>${client.address || "—"}</td>
+          <td>
+            <button class="btn-action" onclick='editClient(${JSON.stringify(client)})'>Edit</button>
+            <span style="color:var(--border);margin:0 4px;">|</span>
+            <button class="btn-action" style="color:var(--error-text)" onclick="deleteClient('${client.id}', '${client.name}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function saveClient() {
+      const btn = document.getElementById("saveBtn");
+      const errorBox = document.getElementById("formError");
+      errorBox.style.display = "none";
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const address = document.getElementById("address").value.trim();
+      const editingId = document.getElementById("editingId").value;
+
+      if (!name || !email) {
+        errorBox.textContent = "Name and email are required.";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+
+      try {
+        let res;
+        if (editingId) {
+          res = await apiFetch(`/api/clients/${editingId}/edit`, {
+            method: "PUT",
+            body: JSON.stringify({ name, email, phone, address })
+          });
+        } else {
+          res = await apiFetch("/api/clients", {
+            method: "POST",
+            body: JSON.stringify({ name, email, phone, address })
+          });
+        }
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorBox.textContent = data.error || "Failed to save client.";
+          errorBox.style.display = "block";
+          return;
+        }
+
+        toggleForm();
+        loadClients();
+
+      } catch (err) {
+        errorBox.textContent = "Could not connect to server.";
+        errorBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = editingId ? "Update Client" : "Save Client";
+      }
+    }
+
+    async function deleteClient(id, name) {
+      if (!confirm(`Are you sure you want to delete ${name}?`)) return;
+
+      try {
+        const res = await apiFetch(`/api/clients/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          loadClients();
+        } else {
+          const data = await res.json();
+          alert(data.error || "Failed to delete client.");
+        }
+      } catch (err) {
+        alert("Could not connect to server.");
+      }
+    }
+
+    loadClients();
+  </script>
+</body>
+</html>

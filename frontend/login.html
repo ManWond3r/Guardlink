@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuardLink - Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* CSS variables for light and dark mode */
+    :root {
+      --bg: #F0F7F2;
+      --panel: #ffffff;
+      --border: #c8e0d0;
+      --text: #1B2E24;
+      --sub: #6B8F71;
+      --muted: #6B8F71;
+      --input-bg: #F0F7F2;
+      --input-text: #1B2E24;
+      --placeholder: #a0bfa8;
+      --btn: #2D6A4F;
+      --btn-text: #ffffff;
+      --err-bg: #fdf0f0;
+      --err-text: #C0392B;
+      --err-border: #C0392B;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0D1B2A;
+      --panel: #1B2E24;
+      --border: #2D6A4F;
+      --text: #ffffff;
+      --sub: #52B788;
+      --muted: #52B788;
+      --input-bg: #0D1B2A;
+      --input-text: #d0e8d8;
+      --placeholder: #3a6b50;
+      --btn: #52B788;
+      --btn-text: #0D1B2A;
+      --err-bg: #2e1a1a;
+      --err-text: #e57373;
+      --err-border: #e57373;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      transition: all 0.3s;
+    }
+
+    /* Left panel - always dark green, hidden on mobile */
+    .left-panel {
+      flex: 1;
+      background: #1B2E24;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 64px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left-panel .orb {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: #52B788;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.1;
+      top: -100px;
+      left: -100px;
+    }
+
+    .brand-tag {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #52B788;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .brand-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .brand-name span { color: #D4A017; }
+
+    .brand-sub {
+      font-size: 15px;
+      color: #6B8F71;
+      max-width: 320px;
+      line-height: 1.7;
+      margin-bottom: 48px;
+      position: relative;
+    }
+
+    .divider {
+      width: 60px;
+      height: 2px;
+      background: #52B788;
+      margin-bottom: 32px;
+    }
+
+    .stats { display: flex; gap: 40px; position: relative; }
+    .stat-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .stat-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #6B8F71;
+    }
+
+    /* Right panel - the actual login form */
+    .right-panel {
+      width: 100%;
+      max-width: 480px;
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 48px 40px;
+      transition: all 0.3s;
+    }
+
+    .form-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .form-sub {
+      font-size: 13px;
+      color: var(--sub);
+      margin-bottom: 36px;
+    }
+
+    .field { margin-bottom: 20px; }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .field input {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      padding: 13px 16px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--input-text);
+      background: var(--input-bg);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field input:focus { border-color: #2D6A4F; }
+    .field input::placeholder { color: var(--placeholder); }
+
+    .error-box {
+      background: var(--err-bg);
+      border: 1px solid var(--err-border);
+      color: var(--err-text);
+      padding: 12px 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .btn-login {
+      width: 100%;
+      background: var(--btn);
+      color: var(--btn-text);
+      border: none;
+      padding: 15px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: opacity 0.2s;
+      margin-top: 8px;
+    }
+
+    .btn-login:hover { opacity: 0.85; }
+    .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .bottom-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 32px;
+    }
+
+    .bottom-note {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+
+    .theme-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s;
+    }
+
+    .theme-toggle:hover { border-color: #2D6A4F; }
+
+    /* Hide left panel on mobile */
+    @media (max-width: 768px) {
+      .left-panel { display: none; }
+      .right-panel { max-width: 100%; padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <div class="orb"></div>
+    <div class="brand-tag">Security Management</div>
+    <div class="brand-name">Guard<span>Link</span></div>
+    <div class="brand-sub">Professional security guard management for modern businesses. Streamlined, paperless, efficient.</div>
+    <div class="divider"></div>
+    <div class="stats">
+      <div>
+        <div class="stat-num">24/7</div>
+        <div class="stat-label">Monitoring</div>
+      </div>
+      <div>
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Paperless</div>
+      </div>
+      <div>
+        <div class="stat-num">KE</div>
+        <div class="stat-label">Based</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel - Login Form -->
+  <div class="right-panel">
+    <div class="form-title">Welcome back</div>
+    <div class="form-sub">Sign in to your account to continue</div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="field">
+      <label>Email Address</label>
+      <input type="email" id="email" placeholder="you@example.com" />
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••••" />
+    </div>
+
+    <button class="btn-login" id="loginBtn" onclick="handleLogin()">Sign In</button>
+
+    <div class="bottom-row">
+      <div class="bottom-note">GUARDLINK SECURITY</div>
+      <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+    </div>
+  </div>
+
+  <script>
+    const API = "http://127.0.0.1:5000";
+
+    // Check if user already has a token and redirect them
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    if (token && role === "admin") window.location.href = "admin/dashboard.html";
+    if (token && role === "client") window.location.href = "client/portal.html";
+
+    // Apply saved theme on page load
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    document.querySelector(".theme-toggle").textContent = savedTheme === "dark" ? "☀️" : "🌙";
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("theme", next);
+      document.querySelector(".theme-toggle").textContent = next === "dark" ? "☀️" : "🌙";
+    }
+
+    async function handleLogin() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const btn = document.getElementById("loginBtn");
+      const errorBox = document.getElementById("errorBox");
+
+      // Hide any previous error
+      errorBox.style.display = "none";
+
+      if (!email || !password) {
+        showError("Please enter your email and password");
+        return;
+      }
+
+      // Show loading state
+      btn.disabled = true;
+      btn.textContent = "Signing in...";
+
+      try {
+        // Send login request to the Flask backend
+        const response = await fetch(`${API}/api/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showError(data.error || "Login failed");
+          return;
+        }
+
+        // Save the token and role in localStorage
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("full_name", data.full_name);
+
+        // Redirect based on role
+        if (data.role === "admin") {
+          window.location.href = "admin/dashboard.html";
+        } else {
+          window.location.href = "client/portal.html";
+        }
+
+      } catch (err) {
+        showError("Could not connect to server. Make sure the backend is running.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Sign In";
+      }
+    }
+
+    function showError(msg) {
+      const errorBox = document.getElementById("errorBox");
+      errorBox.textContent = msg;
+      errorBox.style.display = "block";
+    }
+
+    // Allow pressing Enter to login
+    document.getElementById("password").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") handleLogin();
+    });
+  </script>
+</body>
+</html>

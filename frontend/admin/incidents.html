@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuardLink - Incidents</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <div class="nav-brand" onclick="window.location.href='dashboard.html'">Guard<span>Link</span></div>
+      <div class="nav-tag">Admin Portal</div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">Signed in as <span id="adminName">Admin</span></div>
+      <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Incidents</div>
+        <div class="gold-divider"></div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-secondary" onclick="window.location.href='dashboard.html'">← Back</button>
+        <button class="btn-primary" id="toggleBtn" onclick="toggleForm()">+ Log Incident</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <input type="text" id="searchInput" placeholder="Search by site or description..."
+        oninput="filterIncidents()"
+        style="width:100%;max-width:400px;background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:10px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;" />
+    </div>
+
+    <div class="form-card" id="incidentForm" style="display:none">
+      <div class="form-card-title">New Incident</div>
+      <div class="error-box" id="formError"></div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Site *</label>
+          <select id="siteId"><option value="">Select a site</option></select>
+        </div>
+        <div class="form-field">
+          <label>Guard (optional)</label>
+          <select id="guardId"><option value="">Select a guard</option></select>
+        </div>
+        <div class="form-field form-full">
+          <label>Description *</label>
+          <textarea id="description" rows="4" placeholder="Describe what happened..."></textarea>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveIncident()" id="saveBtn">Save Incident</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="empty-state" id="emptyState">Loading incidents...</div>
+      <table class="data-table" id="incidentsTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Site</th>
+            <th>Guard</th>
+            <th>Description</th>
+            <th>Reported At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="incidentsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="layout.js"></script>
+  <script>
+    let formVisible = false;
+    let allIncidents = [];
+
+    function toggleForm() {
+      formVisible = !formVisible;
+      document.getElementById("incidentForm").style.display = formVisible ? "block" : "none";
+      document.getElementById("toggleBtn").textContent = formVisible ? "Cancel" : "+ Log Incident";
+    }
+
+    async function loadData() {
+      try {
+        const [incidentsRes, sitesRes, guardsRes] = await Promise.all([
+          apiFetch("/api/incidents"),
+          apiFetch("/api/sites"),
+          apiFetch("/api/guards")
+        ]);
+
+        allIncidents = await incidentsRes.json();
+        const sites = await sitesRes.json();
+        const guards = await guardsRes.json();
+
+        const siteSelect = document.getElementById("siteId");
+        siteSelect.innerHTML = '<option value="">Select a site</option>';
+        sites.forEach(site => {
+          const o = document.createElement("option");
+          o.value = site.id;
+          o.textContent = site.name;
+          siteSelect.appendChild(o);
+        });
+
+        const guardSelect = document.getElementById("guardId");
+        guardSelect.innerHTML = '<option value="">Select a guard</option>';
+        guards.forEach(guard => {
+          const o = document.createElement("option");
+          o.value = guard.id;
+          o.textContent = guard.full_name;
+          guardSelect.appendChild(o);
+        });
+
+        renderIncidents(allIncidents);
+      } catch (err) {
+        document.getElementById("emptyState").textContent = "Error loading incidents.";
+      }
+    }
+
+    function filterIncidents() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allIncidents.filter(i =>
+        (i.site_name || "").toLowerCase().includes(query) ||
+        i.description.toLowerCase().includes(query)
+      );
+      renderIncidents(filtered);
+    }
+
+    function renderIncidents(incidents) {
+      const tbody = document.getElementById("incidentsBody");
+      const empty = document.getElementById("emptyState");
+      const table = document.getElementById("incidentsTable");
+
+      if (incidents.length === 0) {
+        empty.textContent = "No incidents found.";
+        empty.style.display = "block";
+        table.style.display = "none";
+        return;
+      }
+
+      empty.style.display = "none";
+      table.style.display = "table";
+      tbody.innerHTML = "";
+
+      incidents.forEach(incident => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${incident.site_name || "—"}</td>
+          <td>${incident.guard_name || "—"}</td>
+          <td>${incident.description}</td>
+          <td>${new Date(incident.reported_at).toLocaleString()}</td>
+          <td>
+            <button class="btn-action" style="color:var(--error-text)" onclick="deleteIncident('${incident.id}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function saveIncident() {
+      const btn = document.getElementById("saveBtn");
+      const errorBox = document.getElementById("formError");
+      errorBox.style.display = "none";
+
+      const site_id = document.getElementById("siteId").value;
+      const guard_id = document.getElementById("guardId").value;
+      const description = document.getElementById("description").value.trim();
+
+      if (!site_id || !description) {
+        errorBox.textContent = "Site and description are required.";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+
+      try {
+        const res = await apiFetch("/api/incidents", {
+          method: "POST",
+          body: JSON.stringify({ site_id, guard_id: guard_id || null, description })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorBox.textContent = data.error || "Failed to save incident.";
+          errorBox.style.display = "block";
+          return;
+        }
+
+        document.getElementById("siteId").value = "";
+        document.getElementById("guardId").value = "";
+        document.getElementById("description").value = "";
+        toggleForm();
+        loadData();
+      } catch (err) {
+        errorBox.textContent = "Could not connect to server.";
+        errorBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Save Incident";
+      }
+    }
+
+    async function deleteIncident(id) {
+      if (!confirm("Are you sure you want to delete this incident?")) return;
+      try {
+        const res = await apiFetch(`/api/incidents/${id}`, { method: "DELETE" });
+        if (res.ok) loadData();
+        else alert("Failed to delete incident.");
+      } catch (err) {
+        alert("Could not connect to server.");
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

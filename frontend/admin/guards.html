@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuardLink - Guards</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <div class="nav-brand" onclick="window.location.href='dashboard.html'">Guard<span>Link</span></div>
+      <div class="nav-tag">Admin Portal</div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">Signed in as <span id="adminName">Admin</span></div>
+      <label class="toggle-switch" title="Toggle theme">
+        <input type="checkbox" id="themeCheckbox" onchange="toggleTheme()" />
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb" id="toggleIcon">☀️</div>
+      </label>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Guards</div>
+        <div class="gold-divider"></div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-secondary" onclick="window.location.href='dashboard.html'">← Back</button>
+        <button class="btn-primary" id="toggleBtn" onclick="toggleForm()">+ Add Guard</button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div style="margin-bottom:16px;">
+      <input type="text" id="searchInput" placeholder="Search by name or ID number..."
+        oninput="filterGuards()"
+        style="width:100%;max-width:400px;background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:10px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;" />
+    </div>
+
+    <!-- Add/Edit Guard Form -->
+    <div class="form-card" id="guardForm" style="display:none">
+      <div class="form-card-title" id="formTitle">New Guard</div>
+      <div class="error-box" id="formError"></div>
+      <input type="hidden" id="editingId" />
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Full Name *</label>
+          <input type="text" id="fullName" placeholder="John Doe" />
+        </div>
+        <div class="form-field">
+          <label>ID Number *</label>
+          <input type="number" id="idNumber" placeholder="12345678" min="0" />
+        </div>
+        <div class="form-field">
+          <label>Phone</label>
+          <input type="text" id="phone" placeholder="0712345678" />
+        </div>
+        <div class="form-field">
+          <label>Shift</label>
+          <select id="shift">
+            <option value="day">Day</option>
+            <option value="night">Night</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveGuard()" id="saveBtn">Save Guard</button>
+    </div>
+
+    <!-- Guards Table -->
+    <div class="table-wrap">
+      <div class="empty-state" id="emptyState">Loading guards...</div>
+      <table class="data-table" id="guardsTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>ID Number</th>
+            <th>Phone</th>
+            <th>Shift</th>
+            <th>Site</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="guardsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="layout.js"></script>
+  <script>
+    let formVisible = false;
+    let allGuards = [];
+
+    function toggleForm(editMode = false) {
+      if (!editMode) {
+        // Reset form for adding
+        document.getElementById("formTitle").textContent = "New Guard";
+        document.getElementById("fullName").value = "";
+        document.getElementById("idNumber").value = "";
+        document.getElementById("phone").value = "";
+        document.getElementById("shift").value = "day";
+        document.getElementById("editingId").value = "";
+        document.getElementById("saveBtn").textContent = "Save Guard";
+      }
+      formVisible = !formVisible;
+      document.getElementById("guardForm").style.display = formVisible ? "block" : "none";
+      document.getElementById("toggleBtn").textContent = formVisible ? "Cancel" : "+ Add Guard";
+    }
+
+    function editGuard(guard) {
+      document.getElementById("formTitle").textContent = "Edit Guard";
+      document.getElementById("fullName").value = guard.full_name;
+      document.getElementById("idNumber").value = guard.id_number;
+      document.getElementById("phone").value = guard.phone || "";
+      document.getElementById("shift").value = guard.shift;
+      document.getElementById("editingId").value = guard.id;
+      document.getElementById("saveBtn").textContent = "Update Guard";
+      document.getElementById("guardForm").style.display = "block";
+      formVisible = true;
+      document.getElementById("toggleBtn").textContent = "Cancel";
+      window.scrollTo(0, 0);
+    }
+
+    async function loadGuards() {
+      try {
+        const res = await apiFetch("/api/guards");
+        allGuards = await res.json();
+        renderGuards(allGuards);
+      } catch (err) {
+        document.getElementById("emptyState").textContent = "Error loading guards.";
+      }
+    }
+
+    function filterGuards() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allGuards.filter(g =>
+        g.full_name.toLowerCase().includes(query) ||
+        g.id_number.toLowerCase().includes(query)
+      );
+      renderGuards(filtered);
+    }
+
+    function renderGuards(guards) {
+      const tbody = document.getElementById("guardsBody");
+      const empty = document.getElementById("emptyState");
+      const table = document.getElementById("guardsTable");
+
+      if (guards.length === 0) {
+        empty.textContent = "No guards found.";
+        empty.style.display = "block";
+        table.style.display = "none";
+        return;
+      }
+
+      empty.style.display = "none";
+      table.style.display = "table";
+      tbody.innerHTML = "";
+
+      guards.forEach(guard => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${guard.full_name}</td>
+          <td>${guard.id_number}</td>
+          <td>${guard.phone || "—"}</td>
+          <td style="text-transform:capitalize">${guard.shift}</td>
+          <td>${guard.site_name || "—"}</td>
+          <td>
+            <button class="btn-action" onclick='editGuard(${JSON.stringify(guard)})'>Edit</button>
+            <span style="color:var(--border);margin:0 4px;">|</span>
+            <button class="btn-action" style="color:var(--error-text)" onclick="deleteGuard('${guard.id}', '${guard.full_name}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function saveGuard() {
+      const btn = document.getElementById("saveBtn");
+      const errorBox = document.getElementById("formError");
+      errorBox.style.display = "none";
+
+      const full_name = document.getElementById("fullName").value.trim();
+      const id_number = document.getElementById("idNumber").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const shift = document.getElementById("shift").value;
+      const editingId = document.getElementById("editingId").value;
+
+      if (!full_name || !id_number) {
+        errorBox.textContent = "Full name and ID number are required.";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      if (isNaN(id_number) || !Number.isInteger(Number(id_number))) {
+        errorBox.textContent = "ID number must be numbers only.";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+
+      try {
+        let res;
+        if (editingId) {
+          res = await apiFetch(`/api/guards/${editingId}/edit`, {
+            method: "PUT",
+            body: JSON.stringify({ full_name, id_number, phone, shift })
+          });
+        } else {
+          res = await apiFetch("/api/guards", {
+            method: "POST",
+            body: JSON.stringify({ full_name, id_number, phone, shift })
+          });
+        }
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorBox.textContent = data.error || "Failed to save guard.";
+          errorBox.style.display = "block";
+          return;
+        }
+
+        toggleForm();
+        loadGuards();
+
+      } catch (err) {
+        errorBox.textContent = "Could not connect to server.";
+        errorBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = editingId ? "Update Guard" : "Save Guard";
+      }
+    }
+
+    async function deleteGuard(id, name) {
+      if (!confirm(`Are you sure you want to delete ${name}?`)) return;
+
+      try {
+        const res = await apiFetch(`/api/guards/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          loadGuards();
+        } else {
+          const data = await res.json();
+          alert(data.error || "Failed to delete guard.");
+        }
+      } catch (err) {
+        alert("Could not connect to server.");
+      }
+    }
+
+    loadGuards();
+  </script>
+</body>
+</html>
