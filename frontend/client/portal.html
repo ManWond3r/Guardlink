@@ -280,6 +280,16 @@
     .badge-unpaid { background: var(--error-bg); color: var(--error-text); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
     .badge-open { background: var(--warning-bg); color: var(--warning-text); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
     .badge-resolved { background: var(--success-bg); color: var(--success-text); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+
+    @media (max-width: 768px) {
+     .navbar { padding: 8px 16px; height: auto; flex-wrap: wrap; gap: 8px; }
+     .nav-brand { font-size: 20px; }
+     .nav-user { display: none; }
+     .nav-right { gap: 8px; }
+     .logout-btn { padding: 5px 10px; font-size: 11px; }
+     .content { padding: 24px 16px; }
+     .section-title { font-size: 22px; }
+    }
   </style>
 </head>
 <body>
@@ -287,13 +297,13 @@
   <nav class="navbar">
     <div class="nav-brand">Guard<span>Link</span></div>
     <div class="nav-right">
-      <div class="nav-user">Welcome, <span id="clientName">Client</span></div>
-      <label class="toggle-switch" title="Toggle theme">
-        <input type="checkbox" id="themeCheckbox" onchange="toggleTheme()" />
-        <div class="toggle-track"></div>
-        <div class="toggle-thumb" id="toggleIcon">☀️</div>
-      </label>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+        <div class="nav-user">Welcome, <span id="clientName">Client</span></div>
+        <label class="toggle-switch" title="Toggle theme">
+            <input type="checkbox" id="themeCheckbox" onchange="toggleTheme()" />
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb" id="toggleIcon">☀️</div>
+        </label>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </nav>
 
