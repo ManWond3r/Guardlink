@@ -479,4 +479,18 @@ body {
   .modules-grid {
     grid-template-columns: 1fr;
   }
+
+  .data-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .data-table thead,
+  .data-table tbody,
+  .data-table th,
+  .data-table td,
+  .data-table tr {
+    display: revert;
+  }
 }
