@@ -32,7 +32,7 @@ def create_app():
 
     # Enable CORS so our frontend can talk to this backend
     # Without this the browser would block all requests
-    CORS(app, origins="*")
+    CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
     # Set up the database with our app
     db.init_app(app)
