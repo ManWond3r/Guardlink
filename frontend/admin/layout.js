@@ -1,5 +1,5 @@
 // layout.js
-const API = "http://127.0.0.1:5000";
+const API = "https://guardlink-production.up.railway.app";
 
 const token = localStorage.getItem("token");
 const role = localStorage.getItem("role");
