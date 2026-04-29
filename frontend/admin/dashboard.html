@@ -303,6 +303,27 @@
       color: var(--green);
       transform: translate(2px, -2px);
     }
+
+    @media (max-width: 768px) {
+        .navbar {
+            padding: 10px 16px;
+            height: auto;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .nav-tag { display: none; }
+        .nav-brand { font-size: 20px; }
+        .nav-user { font-size: 11px; }
+        .logout-btn { padding: 5px 10px; font-size: 11px; }
+
+        .content { padding: 24px 16px; }
+
+        .stats-row { grid-template-columns: repeat(2, 1fr); }
+        .modules-grid { grid-template-columns: 1fr; }
+
+        .page-title { font-size: 32px; }
+        }
   </style>
 </head>
 <body>
