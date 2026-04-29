@@ -16,7 +16,11 @@
     </div>
     <div class="nav-right">
       <div class="nav-user">Signed in as <span id="adminName">Admin</span></div>
-      <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+      <label class="toggle-switch" title="Toggle theme">
+        <input type="checkbox" id="themeCheckbox" onchange="toggleTheme()" />
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb" id="toggleIcon">☀️</div>
+      </label>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </nav>
