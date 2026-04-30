@@ -1,7 +1,6 @@
 # attendance.py
 # This file handles attendance tracking
 # Admin can mark each guard as present or absent for today
-# The system stores one attendance record per guard per day
 
 import json
 from flask import Blueprint, request, jsonify
