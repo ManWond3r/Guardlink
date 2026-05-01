@@ -136,41 +136,6 @@ def reply_complaint(complaint_id):
     if not data.get("reply"):
         return jsonify({"error": "Reply message is required"}), 400
 
-    # Get client details to send email
-    client = Client.query.get(complaint.client_id)
-    if not client:
-        return jsonify({"error": "Client not found"}), 404
-
-    # Send reply email to client
-    from utils.email import send_email
-    subject = f"Re: Your Complaint | GuardLink Security"
-    html_body = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1B2E24; color: #ffffff; border-radius: 8px; overflow: hidden;">
-        <div style="background: #2D6A4F; padding: 32px 40px; border-bottom: 2px solid #52B788;">
-            <h1 style="margin: 0; font-size: 28px; color: #ffffff;">Guard<span style="color: #D4A017;">Link</span></h1>
-            <p style="color: #52B788; font-size: 12px; letter-spacing: 2px; margin: 4px 0 0;">Complaint Response</p>
-        </div>
-        <div style="padding: 40px;">
-            <p style="color: #52B788;">Dear {client.name},</p>
-            <p style="color: #ccc; margin: 16px 0;">Thank you for reaching out to us. Here is our response to your complaint:</p>
-            <div style="background: #243d2e; border: 1px solid #2D6A4F; border-radius: 6px; padding: 20px; margin: 20px 0;">
-                <p style="color: #aaa; font-size: 12px; margin-bottom: 8px;">YOUR COMPLAINT:</p>
-                <p style="color: #ccc; font-style: italic;">"{complaint.message}"</p>
-            </div>
-            <div style="background: #243d2e; border: 1px solid #52B788; border-radius: 6px; padding: 20px; margin: 20px 0;">
-                <p style="color: #52B788; font-size: 12px; margin-bottom: 8px;">OUR RESPONSE:</p>
-                <p style="color: #fff;">{data["reply"]}</p>
-            </div>
-            <p style="color: #888; margin-top: 24px;">If you have any further concerns, please don't hesitate to contact us.</p>
-        </div>
-        <div style="background: #2D6A4F; padding: 20px 40px; text-align: center;">
-            <p style="color: #52B788; font-size: 11px; letter-spacing: 2px; margin: 0;">GUARDLINK SECURITY · NAIROBI, KENYA</p>
-        </div>
-    </div>
-    """
-    send_email(client.email, subject, html_body)
-
-    # Save the reply and mark as resolved
     complaint.reply = data["reply"]
     complaint.status = "resolved"
     db.session.commit()
