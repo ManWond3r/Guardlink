@@ -176,24 +176,3 @@ def reply_complaint(complaint_id):
     db.session.commit()
 
     return jsonify({"message": "Reply sent successfully"}), 200
-
-@complaints_bp.route("/api/complaints/<complaint_id>/reply", methods=["POST"])
-@jwt_required()
-def reply_complaint(complaint_id):
-    current_user = json.loads(get_jwt_identity())
-    if current_user["role"] != "admin":
-        return jsonify({"error": "Admin access required"}), 403
-
-    complaint = Complaint.query.get(complaint_id)
-    if not complaint:
-        return jsonify({"error": "Complaint not found"}), 404
-
-    data = request.get_json()
-    if not data.get("reply"):
-        return jsonify({"error": "Reply is required"}), 400
-
-    complaint.reply = data["reply"]
-    complaint.status = "resolved"
-    db.session.commit()
-
-    return jsonify({"message": "Reply sent successfully"}), 200
